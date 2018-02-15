@@ -69,15 +69,10 @@ class Robotiq85Driver:
             rospy.logerr("Number of grippers not supported (needs to be 1 or 2)")
             return
         
-        rospy.Subscriber("/vector/right_gripper/cmd", GripperCmd, self._update_right_gripper_cmd, queue_size=10)
-        self._right_gripper_pub = rospy.Publisher('/vector/right_gripper/stat', GripperStat, queue_size=10)
-        self._right_gripper_joint_state_pub = rospy.Publisher('/vector/right_gripper/joint_states', JointState, queue_size=10)      
-        if (self._num_grippers == 2):
-            rospy.Subscriber("/vector/left_gripper/cmd", GripperCmd, self._update_left_gripper_cmd, queue_size=10)
-            self._left_gripper_pub = rospy.Publisher('/vector/left_gripper/stat', GripperStat, queue_size=10)
-            self._left_gripper_joint_state_pub = rospy.Publisher('/vector/left_gripper/joint_states', JointState, queue_size=10)
-
-
+        rospy.Subscriber("/poli/gripper/cmd", GripperCmd, self._update_right_gripper_cmd, queue_size=10)
+        self._gripper_pub = rospy.Publisher('/poli/gripper/stat', GripperStat, queue_size=10)
+        self._gripper_joint_state_pub = rospy.Publisher('/poli/gripper/joint_states', JointState, queue_size=10)      
+    
         self._seq = [0] * self._num_grippers
         self._prev_js_pos = [0.0] * self._num_grippers
         self._prev_js_time = [rospy.get_time()] * self._num_grippers 
@@ -149,11 +144,7 @@ class Robotiq85Driver:
         js.header.frame_id = ''
         js.header.stamp = rospy.get_rostime()
         js.header.seq = self._seq[dev]
-        if 0==dev:
-            prefix = 'right_'
-        else:
-            prefix='left_'
-        js.name = ['%srobotiq_85_left_knuckle_joint'%prefix]
+        js.name = ['robotiq_85_left_knuckle_joint']
         pos = np.clip(0.8 - ((0.8/0.085) * self._gripper.get_pos(dev)), 0., 0.8)
         js.position = [pos]
         dt = rospy.get_time() - self._prev_js_time[dev]
@@ -197,12 +188,9 @@ class Robotiq85Driver:
                     js = JointState()
                     stat = self._update_gripper_stat(i)
                     js = self._update_gripper_joint_state(i)
-                    if (i == 0):
-                        self._right_gripper_pub.publish(stat)
-                        self._right_gripper_joint_state_pub.publish(js)
-                    else:
-                        self._left_gripper_pub.publish(stat)
-                        self._left_gripper_joint_state_pub.publish(js)
+
+                    self._gripper_pub.publish(stat)
+                    self._gripper_joint_state_pub.publish(js)
                         
                             
             r.sleep()
